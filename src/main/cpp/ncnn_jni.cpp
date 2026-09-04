@@ -12,6 +12,13 @@
 extern "C" JNIEXPORT jlong JNICALL
 Java_mihon_feature_translation_engine_NcnnBackend_createNet(
         JNIEnv* env, jobject, jstring paramPath, jstring binPath) {
+    // Bind NCNN OpenMP threads to ARM Big Performance cores (Snapdragon 8 Gen 3 optimization)
+    ncnn::set_cpu_powersave(2);
+    int bigCpus = ncnn::get_big_cpu_count();
+    if (bigCpus > 0) {
+        ncnn::set_omp_num_threads(bigCpus > 4 ? 4 : bigCpus);
+    }
+
     ncnn::Net* net = new ncnn::Net();
 
     const char* pp = env->GetStringUTFChars(paramPath, nullptr);
