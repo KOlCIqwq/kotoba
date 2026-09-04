@@ -78,6 +78,7 @@ val linkMangaNcnn by tasks.registering(Exec::class) {
         "--target=aarch64-none-linux-android26",
         "--sysroot=${nativeSysroot.invariantSeparatorsPath}",
         "-shared",
+        "-static-libstdc++",
         "-o",
         nativeLibrary.get().asFile.invariantSeparatorsPath,
         nativeObject.get().asFile.invariantSeparatorsPath,
