@@ -3,6 +3,9 @@
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -200,6 +203,8 @@ class LlmTranslator(
 
     companion object {
         private const val TAG = "LlmTranslator"
+        private val requestMutex = Mutex()
+        private var lastRequestTimestamp = 0L
 
         /** 所有 provider 用來「開/關思考」的頂層欄位名（見 [LlmProviders.PARAM_RULES]）。自癒重試時整組脫掉。 */
         private val THINKING_KEYS = setOf("reasoning_effort", "reasoning", "thinking", "enable_thinking")

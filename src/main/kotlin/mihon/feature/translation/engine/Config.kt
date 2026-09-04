@@ -110,6 +110,7 @@ data class TranslatorConfig(
     //   這裡零 code 改動）；日後引擎要自帶批次器可直接接回。**非產品設定頁項目**（故不標〔設定〕）。
     val batchSize: Int = 8,              // m-i-t --batch-size：concurrent 模式＝同時並發頁數上限；merged 模式＝每 prompt 併幾頁
     val batchConcurrent: Boolean = true, // m-i-t --batch-concurrent：true＝逐頁分開請求、批內並發（防 truncation/幻覺）；false＝併大 prompt
+    val previousContext: String = "",
     val filterText: String? = null,   // 〔設定〕config.filter_text：regex 命中譯文則濾掉該區（例 ".*badtext.*"）
 )
 
