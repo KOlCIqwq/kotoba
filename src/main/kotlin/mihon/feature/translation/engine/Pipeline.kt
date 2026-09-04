@@ -16,7 +16,7 @@ sealed interface PageResult {
     data class Translated(val page: Bitmap, val stats: PageStats, val analysis: PageAnalysis? = null) : PageResult
 
     /** 沒東西可翻（偵測不到字 / OCR 全空 / 譯文全被過濾）：保留原圖、標記略過、**不覆蓋**。 */
-    data class Skipped(val reason: String, val stats: PageStats) : PageResult
+    data class Skipped(val reason: String, val stats: PageStats, val analysis: PageAnalysis? = null) : PageResult
 
     /** 出錯（網路/429 重試後仍失敗/例外）：保留原圖、**不標記**、之後可重試。 */
     data class Failed(val reason: String) : PageResult
@@ -103,7 +103,7 @@ class Pipeline(
         // 去字集＝有 OCR 原文的區（空白＝疑似誤偵測，不去字、保畫面）。此集翻譯前就確定 ⇒ 去字可與翻譯並發。
         val textRegions = regions.filter { it.sourceText.isNotBlank() }
         if (textRegions.isEmpty()) {
-            return@coroutineScope PageResult.Skipped("OCR 全空", PageStats(lines.size, regions.size, 0, detectMs, ocrMs, 0, 0, 0))
+            return@coroutineScope PageResult.Skipped("OCR 全空", PageStats(lines.size, regions.size, 0, detectMs, ocrMs, 0, 0, 0), PageAnalysis(detection.textMask, regions))
         }
 
         // ★ 去字（CPU）‖ 翻譯（網路）並發：兩者只依賴 OCR，可同時跑（網路等待時 CPU 去字、互不爭資源）。
@@ -173,6 +173,7 @@ class Pipeline(
                         lines.size, regions.size, 0, detectMs, ocrMs, translateMs, 0, 0,
                         promptTokens = promptTok, completionTokens = completionTok,
                     ),
+                    PageAnalysis(detection.textMask, textRegions),
                 )
             }
         }
