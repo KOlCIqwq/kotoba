@@ -1,0 +1,7 @@
+build/
+.cxx/
+*.aar
+.gradle/
+local.properties
+.DS_Store
+
