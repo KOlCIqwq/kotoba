@@ -35,11 +35,16 @@ import kotlin.math.roundToInt
  *   ignore_bubble（cfg.ignoreBubble，ported from utils/bubble.py）：跳過彩色/非氣泡 SFX 類文字。
  *   顏色 head 不採用（彩底太雜）；文字色改由 [Renderer] 取去字後背景亮度判黑/白。
  */
+interface TextOcr : AutoCloseable {
+    suspend fun recognize(page: Bitmap, lines: List<TextLine>, bicubic: Boolean = true)
+    fun warmUp()
+}
+
 class Ocr(
     modelPath: String,
     private val dictionary: List<String>,
     private val cfg: OcrConfig = OcrConfig(),
-) : AutoCloseable {
+) : TextOcr {
 
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
     private val session: OrtSession
@@ -65,10 +70,10 @@ class Ocr(
      * [OcrConfig.concurrent]＝true：多行並發（小圖塊吃不滿 intra-op→改單緒、並發填核，見 init）；false：逐行序列（現狀）。
      * 批次 padding 已否決（寬度差→padding 浪費）；此處是「並發」（零 padding），與批次不同。
      */
-    suspend fun recognize(
+    override suspend fun recognize(
         page: Bitmap,
         lines: List<TextLine>,
-        bicubic: Boolean = cfg.useBicubic, // 裁切縮放內插法：true=手刻 bicubic（救小假名漏讀）、false=Canvas bilinear（現行）
+        bicubic: Boolean,
     ): Unit = coroutineScope {
         val inputName = session.inputNames.first()
         if (cfg.concurrent && lines.size > 1) {
@@ -85,7 +90,7 @@ class Ocr(
      * 暖機：對空白 strip 跑一次 OCR session，讓 ORT session 首次 run 的 lazy 初始化（arena/EP 配置）在單緒完成。
      * 併發翻多頁前先呼叫一次；strip 內容不重要（只為觸發一次 run）。
      */
-    fun warmUp() {
+    override fun warmUp() {
         val strip = Bitmap.createBitmap(160, cfg.textHeight, Bitmap.Config.ARGB_8888)
         try {
             stripToTensor(strip).use { input ->
