@@ -4,6 +4,7 @@
 #include <android/log.h>
 #include <cstring>
 #include "net.h"
+#include "cpu.h"
 
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, "manga_ncnn", __VA_ARGS__)
 
