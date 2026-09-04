@@ -19,7 +19,7 @@ sealed interface PageResult {
     data class Skipped(val reason: String, val stats: PageStats, val analysis: PageAnalysis? = null) : PageResult
 
     /** 出錯（網路/429 重試後仍失敗/例外）：保留原圖、**不標記**、之後可重試。 */
-    data class Failed(val reason: String) : PageResult
+    data class Failed(val reason: String, val analysis: PageAnalysis? = null) : PageResult
 }
 
 /**
@@ -143,7 +143,7 @@ class Pipeline(
             } catch (t: Throwable) {
                 Log.e(TAG, "翻譯失敗", t)
                 inpaintJob.cancelAndJoin() // 翻譯掛 → 丟棄去字、留原圖（§11；native run 不可中斷，cancel 實為等它跑完再丟）
-                return@coroutineScope PageResult.Failed("translate: ${t.message}")
+                return@coroutineScope PageResult.Failed("translate: ${t.message}", PageAnalysis(detection.textMask, textRegions))
             }
             textRegions.forEachIndexed { j, r -> r.translatedText = cht.getOrElse(j) { r.sourceText } }
             translateMs = System.currentTimeMillis() - tTr
@@ -165,7 +165,7 @@ class Pipeline(
             //  - error != null（例外〔網路/HTTP〕或部分解析）→ Failed：不標記、之後重試、整章變紅（呼叫端 drain 標 ERROR）。
             //  - error == null（LLM 正常全解析、但內容全被過濾，如整頁狀聲詞被原樣回 translated==source）→ Skipped：略過、不無限重試。
             return@coroutineScope if (llmError != null) {
-                PageResult.Failed("全數過濾(LLM 失敗 $llmError)｜回應=${llmRaw?.take(80)}")
+                PageResult.Failed("全數過濾(LLM 失敗 $llmError)｜回應=${llmRaw?.take(80)}", PageAnalysis(detection.textMask, textRegions))
             } else {
                 PageResult.Skipped(
                     "全數過濾 對齊$aligned/${textRegions.size}｜回應=$llmRaw｜$dbg",
