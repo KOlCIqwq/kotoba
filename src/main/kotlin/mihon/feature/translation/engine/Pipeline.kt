@@ -72,6 +72,13 @@ class Pipeline(
     private val typeface: Typeface? = null,
 ) : TranslationEngine {
 
+    override fun setLanguage(fromLang: String, toLang: String) {
+        (translator as? LlmTranslator)?.let {
+            it.currentFromLang = fromLang
+            it.currentToLang = toLang
+        }
+    }
+
     override suspend fun translatePage(page: Bitmap): PageResult = coroutineScope {
         val tWall = System.currentTimeMillis()
         EngineTrace.log("pipe.page.enter ${page.width}x${page.height}")

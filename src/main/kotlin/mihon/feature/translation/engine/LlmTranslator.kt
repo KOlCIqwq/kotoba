@@ -32,6 +32,8 @@ class LlmTranslator(
     private val cfg: TranslatorConfig = TranslatorConfig(),
     private val postProcess: ((String) -> String)? = null,
 ) : Translator {
+    @Volatile var currentFromLang: String = cfg.fromLangName
+    @Volatile var currentToLang: String = cfg.toLangName
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -98,7 +100,7 @@ class LlmTranslator(
         return JSONArray().apply {
             put(msg("system", systemPrompt()))
             // few-shot 同時示範 <|i|> 格式與語言對；任一空白＝不放（全靠 system + 格式規則）
-            if (cfg.sampleSource.isNotBlank() && cfg.sampleTarget.isNotBlank()) {
+            if (currentFromLang.equals("Japanese", ignoreCase = true) && cfg.sampleSource.isNotBlank() && cfg.sampleTarget.isNotBlank()) {
                 put(msg("user", cfg.sampleSource))
                 put(msg("assistant", cfg.sampleTarget))
             }
@@ -108,8 +110,8 @@ class LlmTranslator(
 
     /** 套入語言對：{to_lang}←toLangName、{from_lang}←fromLangName（空白＝省略來源語、讓 LLM 自己判）。 */
     private fun systemPrompt(): String {
-        val fromClause = cfg.fromLangName.trim().let { if (it.isEmpty()) "" else "$it " }
-        return SYSTEM_TEMPLATE.replace("{to_lang}", cfg.toLangName).replace("{from_lang}", fromClause)
+        val fromClause = currentFromLang.trim().let { if (it.isEmpty()) "" else "$it " }
+        return SYSTEM_TEMPLATE.replace("{to_lang}", currentToLang).replace("{from_lang}", fromClause)
     }
 
     private fun msg(role: String, content: String) =

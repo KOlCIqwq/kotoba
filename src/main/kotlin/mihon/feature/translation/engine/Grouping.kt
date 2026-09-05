@@ -45,8 +45,17 @@ class TextRegion(
     var dbgStd: Float = -1f
     var dbgWhite: Float = -1f
 
-    /** 合併原文（lines 已依閱讀序排好）。日文無空白，直接相接。 */
-    val sourceText: String get() = lines.joinToString("") { it.text }
+    /** 合併原文（lines 已依閱讀序排好）。日文/中文無空白直接相接；歐文/韓文需以空白分隔單字避免連黏。 */
+    val sourceText: String get() {
+        if (lines.isEmpty()) return ""
+        val needsSpace = lines.any { line ->
+            line.text.any { c -> (c in 'a'..'z') || (c in 'A'..'Z') || (c in '\uAC00'..'\uD7AF') }
+        }
+        val delimiter = if (needsSpace) " " else ""
+        return lines.map { it.text.trim() }
+            .filter { it.isNotEmpty() }
+            .joinToString(delimiter)
+    }
 
     val x0: Float = lines.minOf { ln -> ln.quad.minOf { it.x } }
     val y0: Float = lines.minOf { ln -> ln.quad.minOf { it.y } }

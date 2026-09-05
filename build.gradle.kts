@@ -112,5 +112,8 @@ dependencies {
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
     implementation(libs.bundles.kotlinx.coroutines)
     implementation(libs.bundles.okhttp)
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

@@ -27,6 +27,9 @@ interface TranslationEngine : AutoCloseable {
      */
     suspend fun translatePage(page: Bitmap): PageResult
 
+    /** 切換當前翻譯語言對（fromLang: "Japanese" / "Korean" 等；toLang: "English" / "Chinese" 等）。 */
+    fun setLanguage(fromLang: String, toLang: String) {}
+
     /**
      * 單緒暖機：對每個原生 session（detector / OCR / 去字）各空跑一次推論，完成首次 lazy 初始化（權重預處理 / arena 配置等）。
      * **併發翻多頁前先呼叫一次**（單緒）——否則多頁同時打進「剛載好、還沒推論過」的冷 session 會撞首次初始化的 race → 原生 crash。
